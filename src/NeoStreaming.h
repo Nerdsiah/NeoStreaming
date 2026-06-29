@@ -20,7 +20,8 @@
  * @section ARCHITECTURE
  * Implements a Zero-Heap Proxy Pattern for stream manipulation.
  * - setw() is temporary (applies only to the next value).
- * - setprecision(), setfill(), left, right, fixed, defaultfloat, scientific, and hexfloat are persistent.
+ * - setprecision(), setfill(), left, right, fixed, defaultfloat, scientific,
+ * and hexfloat are persistent.
  * - Architecture-aware math conversions to prevent buffer overflows.
  */
 
@@ -43,7 +44,8 @@ constexpr size_t MAX_PAD_WIDTH = 128;
 /** @brief Safe stack buffer size for verbose strftime outputs. */
 constexpr size_t TIME_BUFFER_SIZE = 64;
 
-/** @brief Secure stack buffer for max 32-bit/64-bit precision string generation. */
+/** @brief Secure stack buffer for max 32-bit/64-bit precision string
+ * generation. */
 constexpr size_t FLOAT_BUFFER_SIZE = 80;
 
 /* ========================================================================
@@ -97,10 +99,10 @@ enum Justify { left, right };  // Standard C++ alignment manipulators
  * @brief Standard C++ float formatting manipulators.
  */
 enum FloatFormat {
-  defaultfloat = 0,	// Prints using significant figures
-  fixed = 1,		// Prints using exact decimal places
-  hexfloat = 2,		// Prints IEEE-754 hexadecimal floating-point
-  scientific = 3	// Prints using scientific notation
+  defaultfloat = 0,  // Prints using significant figures
+  fixed = 1,         // Prints using exact decimal places
+  hexfloat = 2,      // Prints IEEE-754 hexadecimal floating-point
+  scientific = 3     // Prints using scientific notation
 };
 
 struct SetW {
@@ -199,7 +201,8 @@ inline void FormatTime(const PutTime& arg, char* timeBuf, size_t bufSize) {
   if (arg.timeStruct && arg.format) {
 #ifdef __AVR__
     // AVR WORKAROUND: AVR's native strftime is often stripped to save flash
-    // memory and fails silently. We manually parse the most common time formats.
+    // memory and fails silently. We manually parse the most common time
+    // formats.
 
     // Handle standard "%Y-%m-%d %H:%M:%S"
     if (strcmp(arg.format, "%Y-%m-%d %H:%M:%S") == 0) {
@@ -260,7 +263,7 @@ inline Print& operator<<(Print& strm, FloatFormat arg) {
  */
 inline Print& operator<<(Print& strm, double val) {
   char numBuf[FLOAT_BUFFER_SIZE] = {0};
-  FormatFloat(val, numBuf, sizeof(numBuf));  
+  FormatFloat(val, numBuf, sizeof(numBuf));
   strm.print(numBuf);
 
   return strm;
@@ -274,7 +277,7 @@ inline Print& operator<<(Print& strm, const PutTime& arg) {
   char timeBuf[TIME_BUFFER_SIZE] = {0};
   FormatTime(arg, timeBuf, sizeof(timeBuf));
   strm.print(timeBuf);
-  
+
   return strm;
 }
 
@@ -326,13 +329,12 @@ struct PrintProxy {
   Print& operator<<(double val) {
     char numBuf[FLOAT_BUFFER_SIZE] = {0};
     FormatFloat(val, numBuf, sizeof(numBuf));
-	
+
     return m_printPaddedStack(numBuf);
   }
 
   /**
-   * @brief Handles Signed/Unsigned Integer Overloads (int/uint, short,
-   * long/ulong, int32_t/uint32_t).
+   * @brief Handles Signed/Unsigned Integer Overloads.
    */
   Print& operator<<(long val) {
     char buf[16];
@@ -348,31 +350,25 @@ struct PrintProxy {
     return m_printPaddedStack(buf);
   }
 
-  Print& operator<<(unsigned int val) {
-    return this->operator<<((unsigned long)val);
-  }
+  Print& operator<<(unsigned int val) { return this->operator<<((unsigned long)val); }
 
   Print& operator<<(const char* val) { return m_printPaddedStack(val); }
 
   Print& operator<<(const PutTime& arg) {
     char timeBuf[TIME_BUFFER_SIZE] = {0};
-    FormatTime(arg, timeBuf,
-               sizeof(timeBuf));  // Call the time formatting helper function
+    FormatTime(arg, timeBuf, sizeof(timeBuf));
+
     return m_printPaddedStack(timeBuf);
   }
 
   /**
-   * @brief Fallback Template for unhandled Arduino types.
+   * @brief Fallback Template for all unhandled types without specific overload.
+   * Width formatting is ignored here for all unknown types.
    */
   template <class T>
   Print& operator<<(const T& val) {
-    if (width <= 0) {
-      strm.print(val);
-      return strm;
-    }
-    // Create the string, then route it immediately into the padding engine
-    String s = String(val);
-    return m_printPaddedStack(s.c_str());
+    strm.print(val);
+    return strm;
   }
 
  private:
